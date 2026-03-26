@@ -1,0 +1,23 @@
+# 🔒 Sensitive files
+.env
+credentials.json
+client_secret.json
+token.pickle
+
+# 🐍 Python
+__pycache__/
+*.pyc
+
+# 📦 Virtual Environment
+venv/
+
+# 📁 Runtime / Generated files
+uploads/
+input/
+output/
+history.json
+
+# 🧹 Misc
+debug.html
+code.txt
+.DS_Store
