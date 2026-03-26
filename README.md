@@ -152,7 +152,6 @@ are excluded using `.gitignore`.
 - 🌐 Deploy on cloud (Render / AWS)
 - 📱 Mobile-friendly UI
 - 📊 Dashboard for analytics
-- 🗣️ Voice-based summarization
 
 ---
 
