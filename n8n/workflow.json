@@ -1,188 +1,55 @@
 {
-  "name": "Euron Book Summary",
+  "name": "BookBrief AI Workflow",
   "nodes": [
     {
-      "parameters": {
-        "pollTimes": { "item": [{ "mode": "everyMinute" }] },
-        "triggerOn": "specificFolder",
-        "folderToWatch": {
-          "__rl": true,
-          "value": "1N2y2DZj8dM07KeqkR1-rFRFLTuorvNz-",
-          "mode": "id"
-        },
-        "event": "fileCreated"
-      },
-      "type": "n8n-nodes-base.googleDriveTrigger",
-      "typeVersion": 1,
-      "position": [0, -112],
-      "id": "trigger",
       "name": "Google Drive Trigger",
-      "credentials": {}
-    },
-
-    {
+      "type": "googleDriveTrigger",
       "parameters": {
-        "operation": "download",
-        "fileId": { "__rl": true, "value": "={{ $json.id }}", "mode": "id" }
-      },
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [200, -112],
-      "id": "download",
+        "folderToWatch": "YOUR_INPUT_FOLDER_ID"
+      }
+    },
+    {
       "name": "Download File",
-      "credentials": {}
+      "type": "googleDrive"
     },
-
     {
-      "parameters": {
-        "conditions": {
-          "conditions": [
-            {
-              "leftValue": "={{$binary.data.fileExtension}}",
-              "rightValue": "pdf",
-              "operator": { "type": "string", "operation": "equals" }
-            },
-            {
-              "leftValue": "={{$json.name}}",
-              "rightValue": "_summary",
-              "operator": { "type": "string", "operation": "notContains" }
-            }
-          ],
-          "combinator": "and"
-        }
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [350, 80],
-      "id": "if",
-      "name": "Check File Type"
+      "name": "Check File Type",
+      "type": "if"
     },
-
     {
-      "parameters": { "operation": "pdf" },
-      "type": "n8n-nodes-base.extractFromFile",
-      "typeVersion": 1,
-      "position": [500, 0],
-      "id": "pdf",
-      "name": "Extract PDF"
+      "name": "Extract PDF",
+      "type": "extractFromFile"
     },
-
     {
-      "parameters": { "operation": "text" },
-      "type": "n8n-nodes-base.extractFromFile",
-      "typeVersion": 1,
-      "position": [500, 200],
-      "id": "text",
-      "name": "Extract Text"
+      "name": "Extract Text",
+      "type": "extractFromFile"
     },
-
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [700, 100],
-      "id": "merge",
-      "name": "Merge"
+      "name": "Merge",
+      "type": "merge"
     },
-
     {
-      "parameters": {
-        "jsCode": "const text = $input.all().map(i => i.json.text || i.json.data || '').join('\\n\\n'); return [{ json: { text } }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [900, -80],
-      "id": "prep",
-      "name": "Prepare Text"
+      "name": "Prepare Text",
+      "type": "code"
     },
-
     {
-      "parameters": {
-        "promptType": "define",
-        "text": "Summarize in structured format:\\n- Key Takeaway\\n- Important Lessons\\n- Core Principles\\n\\nText: {{ $json.text }}"
-      },
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "typeVersion": 1,
-      "position": [1100, -150],
-      "id": "llm",
-      "name": "LLM Chain"
+      "name": "LLM Chain",
+      "type": "llm"
     },
-
     {
-      "parameters": { "model": "llama-3.3-70b-versatile" },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
-      "typeVersion": 1,
-      "position": [1100, 100],
-      "id": "groq",
       "name": "Groq Model",
-      "credentials": {}
+      "type": "llmModel"
     },
-
     {
-      "parameters": {
-        "jsCode": "let name = $node['Google Drive Trigger'].json.name || 'file'; name = name.replace(/\\.[^/.]+$/, ''); name = name.replace(/_summary$/, ''); const fileName = `${name}_summary.txt`; const text = $input.first().json.text || ''; const encoded = Buffer.from(text).toString('base64'); return [{ json:{fileName}, binary:{file:{data:encoded, mimeType:'text/plain', fileName}} }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1350, -100],
-      "id": "format",
-      "name": "Format Output"
+      "name": "Format Output",
+      "type": "code"
     },
-
     {
-      "parameters": {
-        "inputDataFieldName": "file",
-        "name": "={{$binary.file.fileName}}",
-        "folderId": {
-          "__rl": true,
-          "value": "1qsduFkWcwDuvstkK79g-Y3Z1xsMFvG_0",
-          "mode": "id"
-        }
-      },
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [1550, -100],
-      "id": "upload",
       "name": "Upload Summary",
-      "credentials": {}
+      "type": "googleDrive",
+      "parameters": {
+        "folderId": "YOUR_OUTPUT_FOLDER_ID"
+      }
     }
-  ],
-
-  "connections": {
-    "Google Drive Trigger": {
-      "main": [[{ "node": "Download File", "type": "main", "index": 0 }]]
-    },
-    "Download File": {
-      "main": [[{ "node": "Check File Type", "type": "main", "index": 0 }]]
-    },
-    "Check File Type": {
-      "main": [
-        [{ "node": "Extract PDF", "type": "main", "index": 0 }],
-        [{ "node": "Extract Text", "type": "main", "index": 0 }]
-      ]
-    },
-    "Extract PDF": {
-      "main": [[{ "node": "Merge", "type": "main", "index": 0 }]]
-    },
-    "Extract Text": {
-      "main": [[{ "node": "Merge", "type": "main", "index": 1 }]]
-    },
-    "Merge": {
-      "main": [[{ "node": "Prepare Text", "type": "main", "index": 0 }]]
-    },
-    "Prepare Text": {
-      "main": [[{ "node": "LLM Chain", "type": "main", "index": 0 }]]
-    },
-    "LLM Chain": {
-      "main": [[{ "node": "Format Output", "type": "main", "index": 0 }]]
-    },
-    "Groq Model": {
-      "ai_languageModel": [[{ "node": "LLM Chain", "type": "ai_languageModel", "index": 0 }]]
-    },
-    "Format Output": {
-      "main": [[{ "node": "Upload Summary", "type": "main", "index": 0 }]]
-    }
-  },
-
-  "active": true
+  ]
 }
